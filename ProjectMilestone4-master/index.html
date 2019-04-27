@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<title>Highest Female Suiccide Rate </title>
+
+<style>
+  html {
+    height: 100%;
+  }
+
+  body {
+    height: 100vh;
+    margin: 0px;
+    display: flex;
+    font-family: Times New Roman;
+    background-color: #2a231c;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  #viz p{
+  font-family: Times New Roman;
+  color: #f6f3f3;
+  padding-left: 560px;
+  font-size: 25px;
+  }
+  .w3-container{
+  padding-left:1550px;
+  padding-bottom:25px;
+  }
+   
+  #header {
+    background-color: #f6f4f3;
+    padding-left: 563px;
+    padding-top: 17px;
+    border-bottom: 1.64px solid white;
+  }
+
+  #header #headline {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  #header h1 {
+    font-family: Times New Roman, sans-serif;
+    font-size: 26px;
+    color: #433091;
+    margin-top: 0px;
+    margin-bottom: 5px;
+  }
+
+  div#chart {
+    flex: 1.04;
+  }
+
+  .title {
+    font-family: Times New Roman, sans-serif;
+    font-size: 30px;
+    fill: #625e5b;
+  }
+
+  .dropdown {
+    color: #171616;
+    font-family: Times New Roman, sans-serif;
+    font-size: 25px;
+    padding-right: 20px;
+  }
+
+  .dropdown select {
+    color: #2c2a2a;
+    font-family: Times New Roman, Decorative;
+    font-size: 19px;
+  }
+  
+  svg text {
+    fill: #ffffff;
+  }
+  
+  
+  /*@media screen and (max-width: 500px) {*/
+    .axis--x {
+      font-size: 14px;
+    }
+
+    .axis--y {
+      font-size: 20px;
+    }
+
+    .label {
+      font-size: 10px;
+    }
+  }
+
+  /*@media screen and (min-width: 800px) {*/
+    .axis--x {
+      font-size: 21px;
+    }
+
+    .axis--y {k
+      font-size: 19px;
+    }
+
+    .label {
+      font-size: 21px;
+    }
+  }
+  
+ 
+  
+</style>
+<div id = "viz">
+<p><b> INFORMATION   VISUALIZATION   MILESTONE  4</b></p>
+</div>
+<div id="header">
+  <div id="headline">
+    <h1>Suicide Rate For Western European Countries</h1>
+    <div class="dropdown" id="year"><label>Year: </label><select></select></div>
+  </div>
+</div>
+<div id="chart"></div>
+<div class="w3-container">
+  <a href="next.html" class="w3-btn w3-grey"><b>NEXT</b></a>
+</div>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+<script>
+  d3.csv("barchart.csv", function (d) {
+    d.suicide_no = +d.suicide_no;
+    return d;
+  }, function (error, data) {
+    if (error) throw error;
+
+    var barChart = chart();
+
+    var nestedData = d3.nest()
+      .key(function (d) { return d.year; }).sortKeys(d3.ascending)
+      .key(function (d) { return d.country; }).sortKeys(d3.ascending)
+      .rollup(function (leaves) { return { "number": leaves.length, "total_suicide": d3.sum(leaves, function (d) { return +d.suicide_no; }) } }) 
+      .entries(data);
+
+    var menuYear = d3.select("#year select")
+      .on("change", () => change(false));
+
+    menuYear.selectAll("option")
+      .data(nestedData)
+      .enter().append("option")
+      .text(function (d) { return d.key; });
+
+    menuYear.property("value", "2010");
+
+    var change = function (isResize) {
+      var year = menuYear.property("value");
+
+      var currentData = nestedData.find(function (d) { return d.key === year }).values
+        .map(function (d) { return { key: d.key, value: d.value.total_suicide }; })
+        .sort(function (a, b) { return b.value - a.value; });
+
+      var selection = d3.select("#chart");
+
+      selection.datum(currentData).call(barChart, isResize);
+    }
+
+    window.onresize = function () {
+      change(true);
+    }
+
+    change(false);
+  });
+  
+
+  var chart = function () {
+    var svg = null;
+    var width;
+    var height;
+    var chartWidth;
+    var chartHeight;
+    var x;
+    var y;
+
+    function chart(selection, isResize) {
+      selection.each(function (data) {
+        var duration = isResize ? 0 : 1000;
+
+        width = selection.node().getBoundingClientRect().width;
+        height = selection.node().getBoundingClientRect().height;
+
+        var ratio = (width - 500) / (800 - 500);
+        var clampedRatio = Math.max(0, Math.min(1, ratio));
+
+        var marginBottom = 80 + 48 * clampedRatio;
+        var marginLeft = 48 + 24 * clampedRatio;
+
+        var margin = {
+          top: 22,
+          right: 10,
+          bottom: marginBottom,
+          left: marginLeft
+        };
+
+        chartWidth = width - margin.left - margin.right;
+        chartHeight = height - margin.top - margin.bottom;
+
+        if (!svg) {
+          svg = selection.append("svg")
+            .style("vertical-align", "bottom"); // <-- Makes all the difference
+
+          var g = svg.append("g");
+
+          g.append("g")
+            .attr("class", "axis axis--x");
+
+          g.append("g")
+            .attr("class", "axis axis--y");
+
+          svg.append("text")
+            .attr("class", "label")
+            .attr("transform", "rotate(-90)")
+            .attr("dy", "0.71em")
+            .attr("text-anchor", "middle")
+            .text("Total Suicide Number");
+          
+          svg.append("text")
+            .attr("class", "label")
+            .attr("transform", "rotate(-180)")
+            .attr("dx", "36em")
+            .attr("text-anchor", "middle")
+            .text("Countries");
+        }
+
+        svg.attr("height", "100%")
+          .attr("width", width);
+
+        svg.select("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        svg.select(".title")
+          .attr("x", width - margin.right);
+
+        svg.select(".label")
+          .attr("x", -chartHeight / 2)
+          .attr("y", 8);
+       
+        d3.select("#year")
+          .style("right", margin.right + "px")
+          .style("top", (12 + 13.4) + "px");
+
+        d3.select("#quantity")
+          .style("right", margin.right + "px")
+          .style("top", (margin.top + 50) + "px");
+
+        x = d3.scaleBand().range([0, chartWidth]).padding(0.1);
+        y = d3.scaleLinear().rangeRound([chartHeight, 0]);
+
+        x.domain(data.map(function (d) { return d.key; }));
+        y.domain([0, d3.max(data, function (d) { return d.value; })]).nice();
+
+        var t = d3.transition()
+          .duration(duration);
+
+        var xAxis = svg.select(".axis--x")
+          .attr("transform", "translate(0," + chartHeight + ")");
+
+        xAxis.transition()
+          .duration(duration)
+          .call(d3.axisBottom(x))
+          .selectAll("text")
+          .attr("y", 0);
+
+        xAxis.selectAll("text")
+          .attr("y", 0)
+          .attr("x", -5)
+          .attr("dy", "0.35em")
+          .attr("transform", "rotate(-90)")
+          .style("text-anchor", "end");
+       
+        svg.select(".axis--y")
+          .transition(t)
+          .delay(duration)
+          .call(d3.axisLeft(y).tickSize(-width));
+
+        var bars = svg.select('g')
+          .selectAll(".bar")
+          .data(data, function (d) { return d.key; });
+            
+        bars
+          .transition(t)
+          .attr("x", function (d) { return x(d.key); })
+          .attr("width", x.bandwidth())
+          .transition(t)
+          .attr("y", function (d) { return y(d.value); })
+          .attr("height", function (d) { return chartHeight - y(d.value); })
+          .style("fill", function (d) { return "#E67E22"; });
+
+        var tooltip = d3.select("body").append("div").attr("class", "toolTip");
+        
+        bars.enter()
+          .append("rect")
+          .attr("class", "bar")
+          .attr("x", function (d) { return x(d.key); })
+          .attr("y", function (d) { return y(0); })
+          .attr("width", x.bandwidth())
+          .style("fill", function (d) { return "F5B041"; })
+          .transition(t)
+          .delay(duration)
+          .attr("y", function (d) { return y(d.value); })
+          .attr("height", function (d) { return chartHeight - y(d.value); });
+
+        bars.exit()
+          .attr("opacity", 1)
+          .transition(t)
+          .attr("y", function (d) { return y(0); })
+          .attr("height", function (d) { return 0; })
+          .attr("opacity", 0)
+          .remove();
+      });
+    }
+
+    return chart;
+  }
+
+</script>
+
+
+
+
+
+
+
+
+
